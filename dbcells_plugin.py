@@ -9,7 +9,7 @@
         begin                : 2022-11-06
         git sha              : $Format:%H$
         copyright            : (C) 2022 by Nerval Junior
-        email                : nerval.junio@discente.ufma.br
+        email                : nerval.junior@discente.ufma.br
  ***************************************************************************/
 
 /***************************************************************************
@@ -23,15 +23,73 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtWidgets import QAction, QFileDialog
+
+from qgis.core import (
+  Qgis,
+  QgsMultiPolygon
+)
+
+from qgis.utils import iface
 
 # Initialize Qt resources from file resources.py
 from .resources import *
+# Import the code for the dialog
+
+
+plugin_dir = os.path.dirname(__file__)
+
+try:
+    import pip
+except:
+    execfile(os.path.join(plugin_dir, get_pip.py))
+    import pip
+    # just in case the included version is old
+    pip.main(['install','--upgrade','pip'])
+
+try:
+    import simpot
+except:
+    pip.main(['install', 'simpot'])
+
+try:
+    import rdflib
+except:
+    pip.main(['install', 'rdflib'])
+
+
+from simpot import serialize_to_rdf, serialize_to_rdf_file, RdfsClass, BNamespace, graph
+
+from rdflib import Namespace, Literal, URIRef,RDF
+from rdflib.namespace import DC, FOAF
+
+
+CELL = Namespace("http://purl.org/ontology/dbcells/cells#")
+GEO = Namespace ("http://www.opengis.net/ont/geosparql#")
+
+
+class Cell ():
+    
+    asWkt = GEO.asWKT
+    resolution = CELL.resolution
+    
+    @RdfsClass(CELL.Cell,"http://www.dbcells.org/epsg4326/")
+    @BNamespace('geo', GEO)
+    @BNamespace('cells', CELL)
+    def __init__(self, dict):
+        self.id = dict["id"]
+        if ('asWkt' in dict):
+            self.asWkt = Literal(dict["asWkt"])
+
+
 # Import the code for the dialog
 from .dbcells_plugin_dialog import DBCellsPluginDialog
 import os.path
 
 
+
+
+            
 class DBCellsPlugin:
     """QGIS Plugin Implementation."""
 
@@ -189,6 +247,10 @@ class DBCellsPlugin:
             self.first_start = False
             self.dlg = DBCellsPluginDialog()
 
+        self.dlg.buttonSPARQL.clicked.connect(self.inputFile)
+        
+        self.dlg.buttonBox.accepted.connect(self.saveFile)
+        self.dlg.buttonBox.rejected.connect(self.close)
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop
@@ -198,3 +260,78 @@ class DBCellsPlugin:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
             pass
+
+    def inputFile (self):
+        self.file_name=str(QFileDialog.getOpenFileName(caption="Defining input file", filter="Terse sparql Triple Language(*.sparql)")[0])
+        self.dlg.lineSPARQL.setText(self.file_name)
+        self.abrirSPARQL()
+        
+        
+        
+    def abrirSPARQL(self):
+                # abrir um arquivo dado na interface
+        with open(self.file_name, 'r') as file:
+            data = file.read().replace('\n', ' ').upper()
+            tokens = data.split(" ")
+            start = tokens.index('SELECT') + 1
+            end = tokens.index('WHERE')
+            self.attributes = tokens[start:end] #identificar os atributos
+            print (self.attributes)
+            for i in self.attributes:
+                self.dlg.comboID.addItem(i.replace("?",""))
+             
+        with open(self.file_name, 'r') as file:
+            data = file.read().replace('\n', ' ').upper()
+            tokens = data.split(" ")
+            start = tokens.index('SELECT') + 1
+            end = tokens.index('WHERE')
+            self.attributes = tokens[start:end] #identificar os atributos
+            print (self.attributes)
+            for i in self.attributes:
+               self.dlg.colGeometria.addItem(i.replace("?",""))
+        
+           
+        
+    def saveFile(self):
+        
+        layer = self.iface.activeLayer()
+
+        if self.dlg.comboID.currentText():
+            features = layer.selectedFeatures() 
+        else:
+            features = layer.getFeatures()
+            
+        if self.dlg.colGeometria.currentText():
+            features = layer.selectedFeatures() 
+        else:
+            features = layer.getFeatures()
+            
+
+        cells = []
+        for feature in features:
+            pol = QgsMultiPolygon()
+            pol.fromWkt (feature.geometry().asWkt())
+            cell = {
+                "id": str(feature[self.dlg.comboID.currentText()])
+            }
+            if self.dlg.buscaCamada.isTrue():
+                features = layer.selectedFeatures() 
+                pol = QgsMultiPolygon()
+                pol.fromWkt (feature.geometry().asWkt())
+                cell['asWkt'] = pol.polygonN(0).asWkt()
+
+            cells.append (cell)
+            print (cell)
+        fileName = self.dlg.buscaCamada.text()
+        self.iface.messageBar().pushMessage(
+            "Success", "Input file written at " + fileName,
+            level=Qgis.Success, duration=3
+        )
+
+        serialize_to_rdf_file(cells, Cell, fileName)
+            
+    def close(self):
+        self.dlg.setVisible(False)   
+  
+
+              

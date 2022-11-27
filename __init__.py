@@ -8,7 +8,7 @@
                              -------------------
         begin                : 2022-11-06
         copyright            : (C) 2022 by Nerval Junior
-        email                : nerval.junio@discente.ufma.br
+        email                : nerval.junior@discente.ufma.br
         git sha              : $Format:%H$
  ***************************************************************************/
 

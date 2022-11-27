@@ -9,7 +9,7 @@
         begin                : 2022-11-06
         git sha              : $Format:%H$
         copyright            : (C) 2022 by Nerval Junior
-        email                : nerval.junio@discente.ufma.br
+        email                : nerval.junior@discente.ufma.br
  ***************************************************************************/
 
 /***************************************************************************

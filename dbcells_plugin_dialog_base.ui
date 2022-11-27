@@ -27,19 +27,12 @@
           </size>
          </property>
          <property name="text">
-          <string>arquivo SPARQL</string>
+          <string>SPARQL file </string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="buscaSPARQL">
-         <property name="maximumSize">
-          <size>
-           <width>300</width>
-           <height>16777215</height>
-          </size>
-         </property>
-        </widget>
+        <widget class="QLineEdit" name="lineSPARQL"/>
        </item>
        <item>
         <widget class="QToolButton" name="buttonSPARQL">
@@ -55,7 +48,7 @@
        <item>
         <widget class="QLabel" name="geometria">
          <property name="text">
-          <string>coluna da geometria </string>
+          <string>geometry column</string>
          </property>
         </widget>
        </item>
@@ -103,7 +96,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="ID">
+        <widget class="QComboBox" name="comboID">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -147,7 +140,8 @@
           </size>
          </property>
          <property name="text">
-          <string>nome da camada</string>
+          <string>
+layer name</string>
          </property>
         </widget>
        </item>
@@ -190,7 +184,7 @@
        <item>
         <widget class="QLabel" name="atributos">
          <property name="text">
-          <string>atributos</string>
+          <string>attributes</string>
          </property>
         </widget>
        </item>

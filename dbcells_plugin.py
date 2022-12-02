@@ -23,18 +23,19 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QFileDialog
-
-from qgis.core import (
-  Qgis,
-  QgsMultiPolygon
-)
-
-from qgis.utils import iface
-
+from qgis.PyQt.QtWidgets import QAction
+from qgis.core import *
+from osgeo import ogr
+import os
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
+from .dbcells_plugin_dialog import DBCellsPluginDialog
+import os.path
+
+  
+from qgis.core import (  Qgis,  QgsMultiPolygon,)
+from qgis.utils import *
 
 
 plugin_dir = os.path.dirname(__file__)
@@ -47,20 +48,10 @@ except:
     # just in case the included version is old
     pip.main(['install','--upgrade','pip'])
 
-try:
-    import simpot
-except:
-    pip.main(['install', 'simpot'])
 
-try:
-    import rdflib
-except:
-    pip.main(['install', 'rdflib'])
+from simpot import serialize_to_rdf_file, RdfsClass, BNamespace
 
-
-from simpot import serialize_to_rdf, serialize_to_rdf_file, RdfsClass, BNamespace, graph
-
-from rdflib import Namespace, Literal, URIRef,RDF
+from rdflib import Namespace, Literal,RDF
 from rdflib.namespace import DC, FOAF
 
 
@@ -80,16 +71,7 @@ class Cell ():
         self.id = dict["id"]
         if ('asWkt' in dict):
             self.asWkt = Literal(dict["asWkt"])
-
-
-# Import the code for the dialog
-from .dbcells_plugin_dialog import DBCellsPluginDialog
-import os.path
-
-
-
-
-            
+          
 class DBCellsPlugin:
     """QGIS Plugin Implementation."""
 
@@ -262,7 +244,7 @@ class DBCellsPlugin:
             pass
 
     def inputFile (self):
-        self.file_name=str(QFileDialog.getOpenFileName(caption="Defining input file", filter="Terse sparql Triple Language(*.sparql)")[0])
+        self.file_name=str(QFileDialog.getOpenFileName(caption="Defining input file", filter="Terse RDF Triple Language(*.ttl)")[0])
         self.dlg.lineSPARQL.setText(self.file_name)
         self.abrirSPARQL()
         
@@ -293,19 +275,12 @@ class DBCellsPlugin:
            
         
     def saveFile(self):
-        
         layer = self.iface.activeLayer()
 
-        if self.dlg.comboID.currentText():
+        if self.dlg.buscaCamada.text():
             features = layer.selectedFeatures() 
         else:
             features = layer.getFeatures()
-            
-        if self.dlg.colGeometria.currentText():
-            features = layer.selectedFeatures() 
-        else:
-            features = layer.getFeatures()
-            
 
         cells = []
         for feature in features:
@@ -314,7 +289,7 @@ class DBCellsPlugin:
             cell = {
                 "id": str(feature[self.dlg.comboID.currentText()])
             }
-            if self.dlg.buscaCamada.isTrue():
+            if self.dlg.colGeometria.currentText():
                 features = layer.selectedFeatures() 
                 pol = QgsMultiPolygon()
                 pol.fromWkt (feature.geometry().asWkt())
